@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="three.min.js"></script>
+<script src="TrackballControls.js"></script>
+<script src="renderer.js"></script>
+<style>
+body, p {
+  margin: 0;
+  font-family: Tahoma;
+}
+</style>
+</head>
+<body>
+</body>
+<script>
+
+const W = window.innerWidth;
+const H = window.innerHeight;
+
+const projection = {
+  angle: 45,
+  aspect: W / H,
+  near: 0.1,
+  far: 10000
+};
+
+// Setup
+const container = document.querySelector('body');
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(W, H);
+renderer.setPixelRatio( window.devicePixelRatio );
+container.appendChild(renderer.domElement);
+
+// Camera
+const camera = new THREE.PerspectiveCamera(
+  projection.angle,
+  projection.aspect,
+  projection.near,
+  projection.far
+);
+camera.position.set( 20, 40, 400 );
+
+// Trackball controlle;
+const controls = new THREE.TrackballControls( camera, renderer.domElement );
+controls.rotateSpeed = 2.0;
+controls.zoomSpeed = 2.0;
+controls.panSpeed = 0.8;
+controls.noZoom = false;
+controls.noPan = false;
+controls.staticMoving = true;
+controls.dynamicDampingFactor = 0.3;
+controls.keys = [ 65, 83, 68 ];
+controls.addEventListener( 'change', render);
+
+
+
+const scene = new THREE.Scene();
+scene.add(camera);
+
+// Lighting
+const pointLight = new THREE.PointLight(0xFFFFFF);
+pointLight.position.x = 10;
+pointLight.position.y = 50;
+pointLight.position.z = 400;
+scene.add(pointLight);
+
+
+
+const globe = new THREE.Group();
+scene.add(globe);
+
+// radius, segments, rings
+const sphere = new THREE.SphereGeometry( 100, 50, 50 );
+const material = new THREE.MeshBasicMaterial({ color: '#777' });
+const mesh = new THREE.Mesh( sphere, material );
+
+globe.add(mesh);
+
+
+function toPoint(lon, lat) {
+  const radius = 110;
+  const phi   = (90-lat)*(Math.PI/180);
+  const theta = (lon + 180) * (Math.PI / 180);
+  x = -((radius) * Math.sin(phi) * Math.cos(theta));
+  z = ((radius) * Math.sin(phi) * Math.sin(theta));
+  y = ((radius) * Math.cos(phi));
+  return {x, y, z};
+}
+
+console.log('toPoint', toPoint(0, 0));
+console.log('toPoint', toPoint(80, 0));
+
+for (let i = 0; i < 20; i++) {
+  const xaxis = new THREE.Geometry();
+  const start = Object.values(toPoint(i, 0));
+  const end = Object.values(toPoint(180, 0));
+
+  xaxis.vertices.push(new THREE.Vector3(...start));
+  xaxis.vertices.push(new THREE.Vector3(...end));
+  scene.add(new THREE.Line( xaxis, new THREE.MeshBasicMaterial({ color: '#FFF' })));
+
+}
+
+
+function render() {
+  renderer.render(scene, camera);
+}
+
+function animate() {
+	requestAnimationFrame( animate );
+	controls.update();
+  render();
+}
+
+
+animate();
+
+/*
+controls.update();
+function update () {
+  renderer.render(scene, camera);
+  requestAnimationFrame(update);  
+}
+
+requestAnimationFrame(update);
+*/
+
+
+</script>
+</html>
