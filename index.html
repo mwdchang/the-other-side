@@ -3,15 +3,38 @@
 <head>
 <script src="three.min.js"></script>
 <script src="TrackballControls.js"></script>
-<script src="renderer.js"></script>
+<!--<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places&callback=initAutocomplete" async defer></script>-->
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDIRqVwNwJtPVQ6RlUBn1wEPqnLRolRLIY&libraries=places"></script>
+<script type="text/javascript" src="places.js"></script>
+<script type="text/javascript" src="util.js"></script>
 <style>
 body, p {
   margin: 0;
   font-family: Tahoma;
 }
+
+.control-panel {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  top: 20px;
+  left: 20px;
+  width: 20%;
+  height: 35%;
+  background: #777;
+  opacity: 0.6;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+
 </style>
 </head>
 <body>
+  <!--
+  <div class="control-panel">
+  </div>
+  -->
 </body>
 <script>
 
@@ -43,8 +66,8 @@ camera.position.set( 20, 40, 400 );
 
 // Trackball controlle;
 const controls = new THREE.TrackballControls( camera, renderer.domElement );
-controls.rotateSpeed = 2.0;
-controls.zoomSpeed = 2.0;
+controls.rotateSpeed = 4.0;
+controls.zoomSpeed = 4.0;
 controls.panSpeed = 0.8;
 controls.noZoom = false;
 controls.noPan = false;
@@ -72,14 +95,15 @@ scene.add(globe);
 
 // radius, segments, rings
 const sphere = new THREE.SphereGeometry( 100, 50, 50 );
+/*
 const material = new THREE.MeshBasicMaterial({ color: '#777' });
 const mesh = new THREE.Mesh( sphere, material );
-
 globe.add(mesh);
+*/
 
 
 function toPoint(lon, lat) {
-  const radius = 110;
+  const radius = 180;
   const phi   = (90-lat)*(Math.PI/180);
   const theta = (lon + 180) * (Math.PI / 180);
   x = -((radius) * Math.sin(phi) * Math.cos(theta));
@@ -91,16 +115,39 @@ function toPoint(lon, lat) {
 console.log('toPoint', toPoint(0, 0));
 console.log('toPoint', toPoint(80, 0));
 
-for (let i = 0; i < 20; i++) {
+/*
+for (let i = 0; i < 100; i++) {
   const xaxis = new THREE.Geometry();
   const start = Object.values(toPoint(i, 0));
-  const end = Object.values(toPoint(180, 0));
+  const end = Object.values(toPoint(180+i, 0));
 
   xaxis.vertices.push(new THREE.Vector3(...start));
   xaxis.vertices.push(new THREE.Vector3(...end));
-  scene.add(new THREE.Line( xaxis, new THREE.MeshBasicMaterial({ color: '#FFF' })));
-
+  scene.add(new THREE.Line( xaxis, new THREE.MeshBasicMaterial({ color: '#2F2' })));
 }
+*/
+
+const line = new THREE.Geometry();
+const start = Object.values(toPoint(-79, 42));
+const end = Object.values(toPoint(-79 + 180, -42));
+line.vertices.push(new THREE.Vector3(...start));
+line.vertices.push(new THREE.Vector3(...end));
+scene.add(new THREE.Line(line, new THREE.MeshBasicMaterial({ color: '#F80' })));
+
+
+const labelMaterial = new THREE.SpriteMaterial({
+  map: makeLabelCanvasTexture(100, 30, 'Toronto'),
+  transparent: true,
+});
+const label = new THREE.Sprite(labelMaterial);
+label.position.x = start[0];
+label.position.y = start[1];
+label.position.z = start[2];
+label.scale.x = 10; 
+label.scale.y = 10; 
+label.scale.z = 10; 
+scene.add(label);
+
 
 
 function render() {
@@ -114,17 +161,19 @@ function animate() {
 }
 
 
-animate();
-
-/*
-controls.update();
-function update () {
-  renderer.render(scene, camera);
-  requestAnimationFrame(update);  
-}
-
-requestAnimationFrame(update);
-*/
+const loader = new THREE.TextureLoader();
+loader.load('land_ocean_ice_cloud_2048.jpg', function (texture) {
+  const material = new THREE.MeshBasicMaterial({ 
+    map: texture, 
+    opacity: 0.8,
+    transparent: true
+    // overdraw: 0.5 
+  });
+  const mesh = new THREE.Mesh( sphere, material );
+  globe.add(mesh);
+  
+  animate();
+});
 
 
 </script>
