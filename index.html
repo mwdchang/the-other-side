@@ -1,16 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-<script src="three.min.js"></script>
-<script src="TrackballControls.js"></script>
-<!--<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places&callback=initAutocomplete" async defer></script>-->
+<title>The other Side</title>
 <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDIRqVwNwJtPVQ6RlUBn1wEPqnLRolRLIY&libraries=places"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
+<script type="text/javascript" src="https://d3js.org/d3.v5.min.js"></script>
+  
+<script type="text/javascript" src="TrackballControls.js"></script>
 <script type="text/javascript" src="places.js"></script>
 <script type="text/javascript" src="util.js"></script>
 <style>
 body, p {
   margin: 0;
   font-family: Tahoma;
+}
+
+p {
+margin-bottom: 4px;
 }
 
 .control-panel {
@@ -20,24 +26,51 @@ body, p {
   top: 20px;
   left: 20px;
   width: 20%;
-  height: 35%;
-  background: #777;
-  opacity: 0.6;
+  height: 40%;
+  background: #EEEEEE;
+  opacity: 0.8;
   border-radius: 8px;
   padding: 10px;
+  border: 2px solid #FFF;
+}
+
+.btn {
+  display:flex; 
+  align-items:center; 
+  padding: 5px; 
+  border:1px solid #888;
+  color: #EEE;
+  background: #369;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: #58B;
 }
 
 
 </style>
 </head>
 <body>
-  <!--
   <div class="control-panel">
+    <p>Enter a city name to see where it matches on the opposite side of the Earth.</p>
+    <div style="display:flex">
+      <input type="text" style="width:12rem; font-size:18px; background: #FFF; border:0; border: 1px solid #369; padding: 5px">
+      <div class="btn" onClick="findPlace()">Find</div>
+    </div>
+    <br/>
+    <div style="display:flex; flex-wrap:wrap">
+      <div>Examples:</div>
+      &nbsp;
+      <div class="btn" style="font-size: 12px; margin: 0 4px" onClick="lookup('Madrid')">Madrid</div>
+      <div class="btn" style="font-size: 12px; margin: 0 4px" onClick="lookup('Toronto')">Toronto</div>
+      <div class="btn" style="font-size: 12px; margin: 0 4px" onClick="lookup('Hong Kong')">Hong Kong</div>
+    </div>
   </div>
-  -->
 </body>
 <script>
 
+const activeList = [];
 const W = window.innerWidth;
 const H = window.innerHeight;
 
@@ -101,9 +134,25 @@ const mesh = new THREE.Mesh( sphere, material );
 globe.add(mesh);
 */
 
+// const xaxis = new THREE.Geometry();
+// xaxis.vertices.push(new THREE.Vector3(-9999, 0, 0));
+// xaxis.vertices.push(new THREE.Vector3(9999, 0, 0));
+// scene.add(new THREE.Line( xaxis, new THREE.MeshBasicMaterial({ color: '#F88' })));
+// 
+// const yaxis = new THREE.Geometry();
+// yaxis.vertices.push(new THREE.Vector3(0, -9999, 0));
+// yaxis.vertices.push(new THREE.Vector3(0, 9999, 0));
+// scene.add(new THREE.Line( yaxis, new THREE.MeshBasicMaterial({ color: '#8F8' })));
+// 
+// const zaxis = new THREE.Geometry();
+// zaxis.vertices.push(new THREE.Vector3(0, 0, -9999));
+// zaxis.vertices.push(new THREE.Vector3(0, 0, 9999));
+// scene.add(new THREE.Line( zaxis, new THREE.MeshBasicMaterial({ color: '#88F' })));
+
+
 
 function toPoint(lon, lat) {
-  const radius = 180;
+  const radius = 150;
   const phi   = (90-lat)*(Math.PI/180);
   const theta = (lon + 180) * (Math.PI / 180);
   x = -((radius) * Math.sin(phi) * Math.cos(theta));
@@ -112,42 +161,78 @@ function toPoint(lon, lat) {
   return {x, y, z};
 }
 
-console.log('toPoint', toPoint(0, 0));
-console.log('toPoint', toPoint(80, 0));
 
-/*
-for (let i = 0; i < 100; i++) {
-  const xaxis = new THREE.Geometry();
-  const start = Object.values(toPoint(i, 0));
-  const end = Object.values(toPoint(180+i, 0));
+/**
+ * lat1, lng1, name1 - start
+ * lat2, lng2, name2 - end
+ */
+function tunnel(lng1, lat1, name1, lng2, lat2, name2) {
+  const line = new THREE.Geometry();
+  const start = Object.values(toPoint(lng1, lat1));
+  const end = Object.values(toPoint(lng2, lat2));
+  line.vertices.push(new THREE.Vector3(...start));
+  line.vertices.push(new THREE.Vector3(...end));
+  scene.add(new THREE.Line(line, new THREE.MeshBasicMaterial({ color: '#F80' })));
 
-  xaxis.vertices.push(new THREE.Vector3(...start));
-  xaxis.vertices.push(new THREE.Vector3(...end));
-  scene.add(new THREE.Line( xaxis, new THREE.MeshBasicMaterial({ color: '#2F2' })));
+  const scaling = 15;
+
+  // Start label
+  const labelMaterialStart = new THREE.SpriteMaterial({
+    map: makeLabelCanvasTexture(name1.length * 5, 30, name1),
+    transparent: true,
+  });
+  const labelStart = new THREE.Sprite(labelMaterialStart);
+  labelStart.position.x = start[0];
+  labelStart.position.y = start[1];
+  labelStart.position.z = start[2];
+  labelStart.scale.x = scaling; 
+  labelStart.scale.y = scaling; 
+  labelStart.scale.z = scaling; 
+  scene.add(labelStart);
+
+  // end label
+  const labelMaterialEnd = new THREE.SpriteMaterial({
+    map: makeLabelCanvasTexture(name2.length * 5, 30, name2),
+    transparent: true,
+  });
+  const labelEnd = new THREE.Sprite(labelMaterialEnd);
+  labelEnd.position.x = end[0];
+  labelEnd.position.y = end[1];
+  labelEnd.position.z = end[2];
+  labelEnd.scale.x = scaling; 
+  labelEnd.scale.y = scaling; 
+  labelEnd.scale.z = scaling; 
+  scene.add(labelEnd);
 }
-*/
 
-const line = new THREE.Geometry();
-const start = Object.values(toPoint(-79, 42));
-const end = Object.values(toPoint(-79 + 180, -42));
-line.vertices.push(new THREE.Vector3(...start));
-line.vertices.push(new THREE.Vector3(...end));
-scene.add(new THREE.Line(line, new THREE.MeshBasicMaterial({ color: '#F80' })));
+async function findPlace() {
+  const text = d3.select('input').node().value;
+  lookup(text);
+  d3.select('input').node().value = '';
+}
 
+async function lookup(nameStr) {
+  if (activeList.includes(nameStr) || nameStr === '') return;
 
-const labelMaterial = new THREE.SpriteMaterial({
-  map: makeLabelCanvasTexture(100, 30, 'Toronto'),
-  transparent: true,
-});
-const label = new THREE.Sprite(labelMaterial);
-label.position.x = start[0];
-label.position.y = start[1];
-label.position.z = start[2];
-label.scale.x = 10; 
-label.scale.y = 10; 
-label.scale.z = 10; 
-scene.add(label);
+  // 1. Get lat and lng 
+  const p1 = await geoCode(nameStr);
+  if (!p1) return null;
+  const latlng = p1.geometry.location;
 
+  // 2. Find opposite
+  const oppositeLng = latlng.lng <= 0 ? latlng.lng + 180 : latlng.lng - 180;
+  const oppositeLat = - latlng.lat;
+
+  // 3. Reverse geocode
+  const p2 = await reverseGeoCode(oppositeLat, oppositeLng);
+  // console.log('!!!!', p2);
+  // const p2Name = p2? p2.formatted_address : '???';
+  const p2Name = p2? p2.address_components[0].short_name : '???';
+
+  tunnel(
+    latlng.lng, latlng.lat, nameStr,
+    oppositeLng, oppositeLat, p2Name);
+}
 
 
 function render() {
@@ -162,7 +247,7 @@ function animate() {
 
 
 const loader = new THREE.TextureLoader();
-loader.load('land_ocean_ice_cloud_2048.jpg', function (texture) {
+loader.load('2_no_clouds_8k.jpg', function (texture) {
   const material = new THREE.MeshBasicMaterial({ 
     map: texture, 
     opacity: 0.8,
@@ -171,7 +256,6 @@ loader.load('land_ocean_ice_cloud_2048.jpg', function (texture) {
   });
   const mesh = new THREE.Mesh( sphere, material );
   globe.add(mesh);
-  
   animate();
 });
 
