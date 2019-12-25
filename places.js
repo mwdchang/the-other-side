@@ -1,9 +1,4 @@
-// https://maps.googleapis.com/maps/api/geocode/json?latlng=40.714224,-73.961452&key=AIzaSyDIRqVwNwJtPVQ6RlUBn1wEPqnLRolRLIY&result_type=locality
-// https://maps.googleapis.com/maps/api/geocode/json?address=1600+Amphitheatre+Parkway,+Mountain+View,+CA&key=YOUR_API_KEY
-
-// Expires 2020
-const API = 'AIzaSyDIRqVwNwJtPVQ6RlUBn1wEPqnLRolRLIY';
-
+const geocoder = new google.maps.Geocoder();
 
 /**
  * @param {number} lat
@@ -11,13 +6,17 @@ const API = 'AIzaSyDIRqVwNwJtPVQ6RlUBn1wEPqnLRolRLIY';
  * @param {function} fn
  */
 async function reverseGeoCode(lat, lng, fn) {
-  const url = 'https://maps.googleapis.com/maps/api/geocode/json?' +
-    `latlng=${lat},${lng}` + 
-    `&key=${API}` + 
-    '&result_type=political|locality';
-  const result = await fetch(url);
-  const data = await result.json();
-  return data.results[0];
+  const geoCodePromise = new Promise((resolve, reject) => {
+    geocoder.geocode({'location': {lat:lat, lng:lng}}, function(results, status) {
+      if (status === 'OK') {
+        resolve(results);
+      } else {
+        reject(status);
+      }
+    })
+  });
+  const results = await geoCodePromise;
+  return _.find(results, r => r.types.includes('locality')) || results[0];
 }
 
 
@@ -26,24 +25,15 @@ async function reverseGeoCode(lat, lng, fn) {
  * @param {function} fn
  */
 async function geoCode(name, fn) {
-  const url = 'https://maps.googleapis.com/maps/api/geocode/json?' +
-    `address=${name}` + 
-    `&key=${API}`; 
-
-  const result = await fetch(url);
-  const data = await result.json();
-  return data.results[0];
-}
-
-
-function GetLatlong(placeStr) {
-  var geocoder = new google.maps.Geocoder();
-  geocoder.geocode({ 'address': placeStr }, function (results, status) {
-    if (status == google.maps.GeocoderStatus.OK) {
-      var latitude = results[0].geometry.location.lat();
-      var longitude = results[0].geometry.location.lng();
-      // console.log('place', placeStr, latitude, longitude);
-    }
+  const geoCodePromise = new Promise((resolve, reject) => {
+    geocoder.geocode({ address: name }, function(results, status) {
+      if (status === 'OK') {
+        resolve(results);
+      } else {
+        reject(status);
+      }
+    });
   });
+  const results = await geoCodePromise;
+  return results[0];
 }
-

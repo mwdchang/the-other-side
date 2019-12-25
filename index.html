@@ -2,7 +2,8 @@
 <html>
 <head>
 <title>The other Side</title>
-<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDIRqVwNwJtPVQ6RlUBn1wEPqnLRolRLIY&libraries=places"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.core.min.js"></script>
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDluSlxIaRFmcJpghw5mdJxZUE5MlZrdSg"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
 <script type="text/javascript" src="https://d3js.org/d3.v5.min.js"></script>
   
@@ -172,34 +173,34 @@ function tunnel(lng1, lat1, name1, lng2, lat2, name2) {
   const end = Object.values(toPoint(lng2, lat2));
   line.vertices.push(new THREE.Vector3(...start));
   line.vertices.push(new THREE.Vector3(...end));
-  scene.add(new THREE.Line(line, new THREE.MeshBasicMaterial({ color: '#F80' })));
+  scene.add(new THREE.Line(line, new THREE.MeshBasicMaterial({ color: '#FF0' })));
 
-  const scaling = 15;
+  const scaling = 25;
 
   // Start label
   const labelMaterialStart = new THREE.SpriteMaterial({
-    map: makeLabelCanvasTexture(name1.length * 5, 30, name1),
+    map: makeLabelCanvasTexture(name1.length * 8, 30, name1),
     transparent: true,
   });
   const labelStart = new THREE.Sprite(labelMaterialStart);
   labelStart.position.x = start[0];
   labelStart.position.y = start[1];
   labelStart.position.z = start[2];
-  labelStart.scale.x = scaling; 
+  labelStart.scale.x = scaling + name1.length; 
   labelStart.scale.y = scaling; 
   labelStart.scale.z = scaling; 
   scene.add(labelStart);
 
   // end label
   const labelMaterialEnd = new THREE.SpriteMaterial({
-    map: makeLabelCanvasTexture(name2.length * 5, 30, name2),
+    map: makeLabelCanvasTexture(name2.length * 8, 30, name2),
     transparent: true,
   });
   const labelEnd = new THREE.Sprite(labelMaterialEnd);
   labelEnd.position.x = end[0];
   labelEnd.position.y = end[1];
   labelEnd.position.z = end[2];
-  labelEnd.scale.x = scaling; 
+  labelEnd.scale.x = scaling + name2.length; 
   labelEnd.scale.y = scaling; 
   labelEnd.scale.z = scaling; 
   scene.add(labelEnd);
@@ -217,7 +218,10 @@ async function lookup(nameStr) {
   // 1. Get lat and lng 
   const p1 = await geoCode(nameStr);
   if (!p1) return null;
-  const latlng = p1.geometry.location;
+  const latlng = { 
+    lat: p1.geometry.location.lat(),
+    lng: p1.geometry.location.lng()
+  };
 
   // 2. Find opposite
   const oppositeLng = latlng.lng <= 0 ? latlng.lng + 180 : latlng.lng - 180;
@@ -225,8 +229,6 @@ async function lookup(nameStr) {
 
   // 3. Reverse geocode
   const p2 = await reverseGeoCode(oppositeLat, oppositeLng);
-  // console.log('!!!!', p2);
-  // const p2Name = p2? p2.formatted_address : '???';
   const p2Name = p2? p2.address_components[0].short_name : '???';
 
   tunnel(

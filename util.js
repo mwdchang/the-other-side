@@ -16,21 +16,20 @@ function makeLabelCanvasTexture(baseWidth, size, name) {
   ctx.canvas.width = width;
   ctx.canvas.height = height;
 
-  // console.log(ctx.canvas.width, ctx.canvas.height);
-
   // need to set font again after resizing canvas
   ctx.font = font;
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'center';
 
   ctx.fillStyle = 'transparent';
+  ctx.fillStyle = '#EEE';
   ctx.fillRect(0, 0, width, height);
 
   // scale to fit but don't stretch
   const scaleFactor = Math.min(1, baseWidth / textWidth);
   ctx.translate(width / 2, height / 2);
   ctx.scale(scaleFactor, 1);
-  ctx.fillStyle = 'white';
+  ctx.fillStyle = 'black';
   ctx.fillText(name, 0, 0);
 
   // return ctx.canvas;
