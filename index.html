@@ -3,10 +3,9 @@
 <head>
 <title>The other Side</title>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.core.min.js"></script>
-<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDluSlxIaRFmcJpghw5mdJxZUE5MlZrdSg"></script>
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDK494xsiKCUDf7c6zao68iFjV18m_6NLM"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
 <script type="text/javascript" src="https://d3js.org/d3.v5.min.js"></script>
-  
 <script type="text/javascript" src="TrackballControls.js"></script>
 <script type="text/javascript" src="places.js"></script>
 <script type="text/javascript" src="util.js"></script>
@@ -17,7 +16,7 @@ body, p {
 }
 
 p {
-margin-bottom: 4px;
+  margin-bottom: 4px;
 }
 
 .control-panel {
@@ -128,7 +127,8 @@ const globe = new THREE.Group();
 scene.add(globe);
 
 // radius, segments, rings
-const sphere = new THREE.SphereGeometry( 100, 50, 50 );
+const sphere = new THREE.SphereGeometry( 100, 80, 80 );
+
 /*
 const material = new THREE.MeshBasicMaterial({ color: '#777' });
 const mesh = new THREE.Mesh( sphere, material );
@@ -253,8 +253,8 @@ loader.load('2_no_clouds_8k.jpg', function (texture) {
   const material = new THREE.MeshBasicMaterial({ 
     map: texture, 
     opacity: 0.8,
+    wireframe: false,
     transparent: true
-    // overdraw: 0.5 
   });
   const mesh = new THREE.Mesh( sphere, material );
   globe.add(mesh);
