@@ -228,8 +228,12 @@ async function lookup(nameStr) {
   const oppositeLat = - latlng.lat;
 
   // 3. Reverse geocode
-  const p2 = await reverseGeoCode(oppositeLat, oppositeLng);
-  const p2Name = p2? p2.address_components[0].short_name : '???';
+  let p2Name = '???';
+  try {
+    const p2 = await reverseGeoCode(oppositeLat, oppositeLng);
+    p2Name = p2? p2.address_components[0].short_name : '???';
+  } catch (e) {
+  }
 
   tunnel(
     latlng.lng, latlng.lat, nameStr,
